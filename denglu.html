@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>小怪sus生日快乐</title>
+    <link rel="icon" href="img/sus.ico">
+    <link rel="stylesheet" href="dlu.css">
+</head>
+<body>
+<div id="formContainer" class="dwo" style="display: none;"> <!-- 初始状态隐藏 -->
+    <div class="formRight">
+        <!-- Login form -->
+        <form id="login">
+            <header>
+            </header>
+            <section>
+                <label>
+                    <input type="text" id="userName" placeholder="请输入用户名" required />
+                    <div class="border"></div>
+                </label>
+                <label>
+                    <input type="password" id="pwd" placeholder="请输入密码" required />
+                    <div class="border"></div>
+                </label>
+                <button type="button" id="loginButton" onclick="login()">登 录</button>
+            </section>
+        </form>
+    </div>
+</div>
+<!-- 背景音乐 -->
+<audio id="backgroundMusic" loop muted>
+    <source src="img/happy_1.MP3" type="audio/mpeg">
+    您的浏览器不支持音频播放。
+</audio>
+<!-- 点击按钮 -->
+<button id="playButton">请点击</button>
+<script>
+    // 获取背景音乐元素
+    const backgroundMusic = document.getElementById('backgroundMusic');
+    const formContainer = document.getElementById('formContainer');
+    const playButton = document.getElementById('playButton');
+
+    // 确保音乐在页面加载时静音播放
+    document.addEventListener('DOMContentLoaded', function() {
+        backgroundMusic.play();
+    });
+
+    // 按钮点击事件
+    playButton.addEventListener('click', function() {
+        // 取消静音并播放
+        backgroundMusic.muted = false;
+        backgroundMusic.play();
+        // 隐藏按钮
+        playButton.style.display = 'none';
+        // 显示登录表单
+        formContainer.style.display = 'block';
+    });
+
+    function login() {
+        const username = document.getElementById('userName').value;
+        const password = document.getElementById('pwd').value;
+        const correctUsername = '小怪sus';
+        const correctPassword = '20251118';
+
+        // 检查用户名和密码是否为空
+        if (!username || !password) {
+            alert('请输入用户名和密码！');
+            return; // 阻止进一步执行
+        }
+
+        if (username === correctUsername && password === correctPassword) {
+            // 停止背景音乐播放
+            backgroundMusic.pause();
+            backgroundMusic.currentTime = 0; // 重置播放时间
+            // 跳转到指定页面
+            window.location.href = 'https://xiogi.github.io/xiaoguai/xiaoguaisus.html'; // 替换为实际要跳转的页面地址
+        } else {
+            alert('用户名或密码输入错误，请重新输入！');
+            // 确保背景音乐继续播放
+            if (backgroundMusic.paused) {
+                backgroundMusic.play();
+            }
+        }
+    }
+</script>
+</body>
+</html>
