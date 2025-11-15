@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数字炸弹</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .game-area {
+            margin: 30px 0;
+        }
+
+        input[type="number"] {
+            width: 200px;
+            padding: 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            text-align: center;
+            transition: border-color 0.3s;
+        }
+
+        input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            margin: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn-guess {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-guess:hover {
+            background: #5a6fd8;
+            transform: translateY(-2px);
+        }
+
+        .btn-reset {
+            background: #f5576c;
+            color: white;
+        }
+
+        .btn-reset:hover {
+            background: #f5576c;
+            transform: translateY(-2px);
+        }
+
+        .message {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .message.hint {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .attempts {
+            color: #666;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .history {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+        }
+
+        .history h3 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .history-item {
+            padding: 5px;
+            margin: 2px 0;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .history-item.too-high {
+            background: #ffe6e6;
+            color: #d63384;
+        }
+
+        .history-item.too-low {
+            background: #e6f3ff;
+            color: #0c63e4;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .shake {
+            animation: shake 0.5s;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .bounce {
+            animation: bounce 0.6s;
+        }
+    </style>
+</head>
+<body>
+<div class="game-container">
+    <h1>👻 数字炸弹</h1>
+    <p class="subtitle">我想了一个1到100之间的数字，主播能猜中吗？</p>
+
+    <div class="game-area">
+        <input type="number" id="guessInput" min="1" max="100" placeholder="输入你的猜测">
+        <br>
+        <button class="btn btn-guess" onclick="makeGuess()">猜一下</button>
+        <button class="btn btn-reset" onclick="resetGame()">重新开始</button>
+    </div>
+
+    <div id="message" class="message">开始你的猜测之路吧！</div>
+
+    <div class="attempts">
+        <span id="attemptCount">0</span> 次尝试
+    </div>
+
+    <div class="history" id="historyContainer" style="display: none;">
+        <h3>猜测历史</h3>
+        <div id="historyList"></div>
+    </div>
+
+    <!-- 返回按钮放在最下面 -->
+    <div style="margin-top: 20px;">
+        <button class="btn" onclick="goBack()" style="background:#fff200;">返回原页面</button>
+    </div>
+</div>
+</div>
+
+<script>
+    let targetNumber;
+    let attempts;
+    let guessHistory;
+    const MAX_ATTEMPTS = 8;
+
+    /* 图片文件名（与 html 同目录） */
+    const IMG_WRONG = '132ace70b3eb0f3b65e9c1a74aab327b.jpg'; // ① 猜错图
+    const IMG_RIGHT = '6172cfde162de896e898e120ae2c743f.jpg'; // ② 猜对图
+    /* 返回原页面 */
+    function goBack() {
+        location.href = 'http://localhost:63342/sus/%E5%B0%8F%E6%80%AAsus.html?_ijt=nq4gsrlfgdfjifjbvsdvf4r7ii&_ij_reload=RELOAD_ON_SAVE';
+    }
+    function initGame() {
+        targetNumber = Math.floor(Math.random() * 100) + 1;
+        attempts = 0;
+        guessHistory = [];
+
+        const input = document.getElementById('guessInput');
+        input.value = '';
+        input.disabled = false;
+
+        document.getElementById('attemptCount').textContent = '0';
+        const msg = document.getElementById('message');
+        msg.innerHTML = `小怪sus开始你的猜测吧！（还剩 ${MAX_ATTEMPTS} 次）`;
+        msg.className = 'message hint';
+
+        document.getElementById('historyContainer').style.display = 'none';
+        document.getElementById('historyList').innerHTML = '';
+    }
+
+    function makeGuess() {
+        const input = document.getElementById('guessInput');
+        const guess = parseInt(input.value);
+        const msgEl = document.getElementById('message');
+
+        if (isNaN(guess) || guess < 1 || guess > 100) {
+            msgEl.innerHTML = '请输入 1 到 100 之间的数字！';
+            msgEl.className = 'message error shake';
+            setTimeout(() => msgEl.classList.remove('shake'), 500);
+            return;
+        }
+
+        attempts++;
+        document.getElementById('attemptCount').textContent = attempts;
+        const left = MAX_ATTEMPTS - attempts;
+
+        /* ---------- 猜中 ---------- */
+        if (guess === targetNumber) {
+            msgEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center">
+            <div style="margin-bottom:10px;font-size:18px">🎉 恭喜主播猜中了！数字就是 ${targetNumber}！</div>
+            <img src="${IMG_RIGHT}" style="width:100%;border-radius:10px">
+        </div>`;
+            msgEl.className = 'message success bounce';
+            input.disabled = true;
+            return;
+        }
+
+        /* ---------- 次数用完 ---------- */
+        if (left === 0) {
+            msgEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;align-items:center">
+            <div style="margin-bottom:10px;font-size:18px">😥❌确认完毕！小怪sus是笨蛋💣 正确答案是 ${targetNumber}</div>
+            <img src="${IMG_WRONG}" style="width:100%;border-radius:10px">
+        </div>`;
+            msgEl.className = 'message error';
+            input.disabled = true;
+            return;
+        }
+
+        /* ---------- 继续猜（不弹图） ---------- */
+        msgEl.innerHTML = `${guess < targetNumber ? '太小了' : '太大了'}！还剩 ${left} 次`;
+        msgEl.className = 'message hint';
+        addToHistory(guess, guess < targetNumber ? 'too-low' : 'too-high');
+
+        input.value = '';
+        input.focus();
+    }
+    function addToHistory(guess, type) {
+        guessHistory.push({guess, type});
+        const container = document.getElementById('historyContainer');
+        const list = document.getElementById('historyList');
+        container.style.display = 'block';
+
+        const item = document.createElement('div');
+        item.className = `history-item ${type}`;
+        item.textContent = `第${attempts}次: ${guess} - ${type === 'too-high' ? '太大' : '太小'}`;
+
+        /* 关键：插到最前面，实现倒序显示 */
+        list.insertBefore(item, list.firstChild);
+    }
+
+    function resetGame() {
+        initGame();
+    }
+
+    document.getElementById('guessInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') makeGuess();
+    });
+
+    initGame();
+</script>
+</body>
+</html>
